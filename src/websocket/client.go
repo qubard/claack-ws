@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 	"time"
-    
-    "github.com/qubard/claack-go/websocket/messages/types"
+
 	"github.com/gorilla/websocket"
+	"github.com/qubard/claack-go/websocket/messages/types"
 )
 
 const (
@@ -29,12 +29,12 @@ type Client struct {
 }
 
 func (c *Client) DoHandler(msgType types.MessageType) {
-    handler := c.hub.bus.GetHandler(msgType)
-    if handler != nil {
-        handler(msgType)
-    } else {
-        log.Println("Non existent handler for message type", msgType)
-    }
+	handler := c.hub.bus.GetHandler(msgType)
+	if handler != nil {
+		handler(msgType)
+	} else {
+		log.Println("Non existent handler for message type", msgType)
+	}
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -52,17 +52,17 @@ func (c *Client) readPump() {
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 
 	for {
-        msg, err := ReadPackedMessage(c.conn)
+		msg, err := ReadPackedMessage(c.conn)
 
-        if err == nil {
-            // When we receive a message pass it to a registered handler
-            msgMap, ok := msg.(map[string]interface{})
-            if ok {
-                msgType := msgMap["type"].(types.MessageType)
-                c.DoHandler(msgType)
-            }
-        }
-        
+		if err == nil {
+			// When we receive a message pass it to a registered handler
+			msgMap, ok := msg.(map[string]interface{})
+			if ok {
+				msgType := msgMap["type"].(types.MessageType)
+				c.DoHandler(msgType)
+			}
+		}
+
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
