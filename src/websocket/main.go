@@ -5,12 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/qubard/claack-go/lib/util"
 	"github.com/qubard/claack-go/websocket/messages/types"
 )
 
 var allowedHosts = map[string]bool{
-	"http://localhost:3000": true,
+	"http://localhost":  true,
+	"http://claack.com": true,
 }
 
 func filterOrigin(r *http.Request) bool {
@@ -37,22 +37,12 @@ func main() {
 		log.Println("Successfully initialized database!")
 	}
 
-	err = claack.AddRaceText("test")
 	claack.SetUpgrader(&upgrader)
 	claack.ParseFlags()
 
 	claack.hub.bus.RegisterHandler(types.InitSocket, func(msg interface{}) {
 		log.Println("Init Socket message", msg)
 	})
-
-	key := []byte("key")
-	signed, err := util.MakeSessionToken("cub", key)
-
-	log.Println(signed, err)
-
-	token, err := util.ParseToken(signed, key)
-
-	log.Println(token.Valid, token.Claims)
 
 	claack.StartHub()
 	claack.HostEndpoint("/ws")

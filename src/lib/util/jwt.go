@@ -11,6 +11,8 @@ func MakeSessionToken(username string, signKey []byte) (string, error) {
 		"iat": time.Now(),
 		"exp": time.Now().Add(time.Hour * 24).Unix(), // Expire in 24h
 	})
+	// Don't think this ever actually errors
+	// https://godoc.org/github.com/dgrijalva/jwt-go#Token.SignedString
 	ss, err := token.SignedString(signKey)
 	return ss, err
 }

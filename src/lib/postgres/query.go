@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"time"
+
+	"github.com/qubard/claack-go/lib/util"
 )
 
 type AuthRow struct {
@@ -27,4 +29,10 @@ func (database *Database) InsertAuthUser(username string, password string) error
 func (database *Database) UpdateSession(username string, token string) error {
 	_, err := database.Handle().Exec(`INSERT INTO sessions VALUES((SELECT id from auth where username=$1), $2) ON CONFLICT (id) DO UPDATE SET token=$2`, username, token)
 	return err
+}
+
+func (database *Database) GenerateSession(username string, key []byte) (string, error) {
+	token, _ := util.MakeSessionToken(username, key)
+	err := database.UpdateSession(username, token)
+	return token, err
 }

@@ -7,3 +7,4 @@ the go port of my uhh..unreleased nodejs typing server
 - stateless user sessions with [JWT](https://github.com/dgrijalva/jwt-go)
 - postgresql backend
 - service oriented
+- recaptcha support

@@ -56,6 +56,7 @@ func (c *Client) readPump() {
 
 		if err == nil {
 			// When we receive a message pass it to a registered handler
+			// Question: What if "type" key is not present in the message?
 			msgMap, ok := msg.(map[string]interface{})
 			if ok {
 				msgType := msgMap["type"].(types.MessageType)
@@ -94,9 +95,11 @@ func (c *Client) writePump() {
 			}
 
 			writer, err := c.conn.NextWriter(websocket.BinaryMessage)
+
 			if err != nil {
 				return
 			}
+
 			writer.Write(message)
 
 			n := len(c.send)
