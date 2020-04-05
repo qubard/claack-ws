@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/qubard/claack-go/lib/util"
 	"github.com/qubard/claack-go/websocket/messages/types"
 )
 
@@ -45,11 +46,11 @@ func main() {
 	})
 
 	key := []byte("key")
-	signed, err := SignUser("cub", key)
+	signed, err := util.MakeSessionToken("cub", key)
 
 	log.Println(signed, err)
 
-	token, err := ValidateUser(signed, key)
+	token, err := util.ParseToken(signed, key)
 
 	log.Println(token.Valid, token.Claims)
 
