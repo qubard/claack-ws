@@ -1,8 +1,8 @@
 package socket
 
 import (
-    "net/http"
-    "log"
+	"log"
+	"net/http"
 )
 
 // serveWebsocket handles websocket requests from the peer.
@@ -15,10 +15,10 @@ func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, bufferSize
 	}
 
 	client := &Client{
-        hub: hub,
-        conn: conn,
-        Send: make(chan []byte, bufferSize),
-    }
+		hub:  hub,
+		conn: conn,
+		Send: make(chan []byte, bufferSize),
+	}
 
 	client.hub.register <- client
 
