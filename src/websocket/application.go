@@ -85,8 +85,13 @@ func (app *Application) HostEndpoint(endpoint string) {
 	}
 }
 
+// The hub needs some way of accessing the database
+// So we just pass it in like this (dependency injection) so its handlers
+// can use the database if they need to
+func (app *Application) CreateHub() {
+	app.Hub = socket.CreateHub(app.db)
+}
+
 func CreateApp() *Application {
-	return &Application{
-		Hub: socket.CreateHub(),
-	}
+	return &Application{}
 }

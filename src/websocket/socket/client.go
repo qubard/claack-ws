@@ -48,16 +48,10 @@ func (c *Client) readPump() {
 
 		if err == nil {
 			// When we receive a message pass it to a registered handler
-			msgMap, ok := msg.(map[string]interface{})
-			if ok {
-				msgType, ok := msgMap["type"].(types.MessageType)
-				if ok {
-					payload, ok := msgMap["payload"]
-					if ok {
-						msgHandler := c.hub.Bus.GetHandler(msgType)
-						if msgHandler != nil {
-							msgHandler(c, payload)
-						}
+			if msgMap, ok := msg.(map[string]interface{}); ok {
+				if msgType, ok := msgMap["type"].(types.MessageType); ok {
+					if payload, ok := msgMap["payload"]; ok {
+						c.hub.Bus.InvokeHandler(c, msgType, payload)
 					}
 				}
 			}

@@ -2,6 +2,7 @@ package socket
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/qubard/claack-go/lib/postgres"
 )
 
 type Hub struct {
@@ -13,13 +14,13 @@ type Hub struct {
 	Upgrader   *websocket.Upgrader
 }
 
-func CreateHub() *Hub {
+func CreateHub(database *postgres.Database) *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
-		Bus:        CreateHandlerBus(),
+		Bus:        CreateHandlerBus(database),
 	}
 }
 

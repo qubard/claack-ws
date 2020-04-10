@@ -1,6 +1,7 @@
 package socket
 
 import (
+	"github.com/qubard/claack-go/lib/postgres"
 	"github.com/qubard/claack-go/websocket/messages/types"
 )
 
@@ -9,17 +10,19 @@ type Message struct {
 	data interface{}
 }
 
-type MessageHandler func(*Client, interface{})
+type MessageHandler func(*postgres.Database, *Client, interface{})
 
 // Concurrent read using the HandlerBus is OK
 // The intended usage of handlers is as READ ONLY
 type HandlerBus struct {
 	handlers map[types.MessageType]MessageHandler
+	db       *postgres.Database
 }
 
-func CreateHandlerBus() *HandlerBus {
+func CreateHandlerBus(database *postgres.Database) *HandlerBus {
 	return &HandlerBus{
 		handlers: make(map[types.MessageType]MessageHandler),
+		db:       database,
 	}
 }
 
@@ -30,4 +33,11 @@ func (bus *HandlerBus) RegisterHandler(id types.MessageType, handler MessageHand
 
 func (bus *HandlerBus) GetHandler(id types.MessageType) MessageHandler {
 	return bus.handlers[id]
+}
+
+func (bus *HandlerBus) InvokeHandler(client *Client, id types.MessageType, payload interface{}) {
+	handler := bus.GetHandler(id)
+	if handler != nil {
+		handler(bus.db, client, payload)
+	}
 }
