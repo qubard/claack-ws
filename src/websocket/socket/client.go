@@ -1,11 +1,12 @@
-package main
+package socket
 
 import (
 	"log"
 	"time"
-
+    
+    "github.com/qubard/claack-go/websocket/messages/types"
+    "github.com/qubard/claack-go/lib/util"
 	"github.com/gorilla/websocket"
-	"github.com/qubard/claack-go/websocket/messages/types"
 )
 
 const (
@@ -25,16 +26,7 @@ type Client struct {
 	// The websocket connection.
 	conn *websocket.Conn
 	// Buffered channel of outbound messages.
-	send chan []byte
-}
-
-func (c *Client) DoHandler(msgType types.MessageType) {
-	handler := c.hub.bus.GetHandler(msgType)
-	if handler != nil {
-		handler(msgType)
-	} else {
-		log.Println("Non existent handler for message type", msgType)
-	}
+	Send chan []byte
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -52,18 +44,25 @@ func (c *Client) readPump() {
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 
 	for {
-		msg, err := ReadPackedMessage(c.conn)
+        msg, err := util.ReadPackedMessage(c.conn)
 
-		if err == nil {
-			// When we receive a message pass it to a registered handler
-			// Question: What if "type" key is not present in the message?
-			msgMap, ok := msg.(map[string]interface{})
-			if ok {
-				msgType := msgMap["type"].(types.MessageType)
-				c.DoHandler(msgType)
-			}
-		}
-
+        if err == nil {
+            // When we receive a message pass it to a registered handler
+            msgMap, ok := msg.(map[string]interface{})
+            if ok {
+                msgType, ok := msgMap["type"].(types.MessageType)
+                if ok {
+                    payload, ok := msgMap["payload"]
+                    if ok {
+                        msgHandler := c.hub.Bus.GetHandler(msgType)
+                        if msgHandler != nil {
+                            msgHandler(c, payload)
+                        }
+                    }
+                }
+            }
+        }
+        
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
@@ -86,7 +85,7 @@ func (c *Client) writePump() {
 
 	for {
 		select {
-		case message, ok := <-c.send:
+		case message, ok := <-c.Send:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
@@ -95,16 +94,16 @@ func (c *Client) writePump() {
 			}
 
 			writer, err := c.conn.NextWriter(websocket.BinaryMessage)
-
+            
 			if err != nil {
 				return
 			}
-
+            
 			writer.Write(message)
 
-			n := len(c.send)
+			n := len(c.Send)
 			for i := 0; i < n; i++ {
-				writer.Write(<-c.send)
+				writer.Write(<-c.Send)
 			}
 
 			if err := writer.Close(); err != nil {

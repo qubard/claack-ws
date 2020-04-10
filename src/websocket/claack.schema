@@ -1,4 +1,6 @@
 races(id SERIAL PRIMARY KEY, text varchar(1200) NOT NULL UNIQUE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)
 auth(id SERIAL PRIMARY KEY, username varchar(15) UNIQUE, password varchar(255) NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)
 rep(id int PRIMARY KEY UNIQUE, value int, FOREIGN KEY (id) REFERENCES auth(id))
-sessions(id int PRIMARY KEY UNIQUE, token text, FOREIGN KEY (id) REFERENCES auth(id))
+session(id int PRIMARY KEY UNIQUE, token text, FOREIGN KEY (id) REFERENCES auth(id))
+profile(id int PRIMARY KEY UNIQUE, alias varchar(32) NOT NULL, description text, hash text, location text, FOREIGN KEY (id) REFERENCES auth(id))
+rating(id int PRIMARY KEY UNIQUE, elo int, FOREIGN KEY (id) REFERENCES auth(id))

@@ -1,13 +1,13 @@
-package main
+package socket
 
 import (
-	"log"
-	"net/http"
+    "net/http"
+    "log"
 )
 
 // serveWebsocket handles websocket requests from the peer.
-func serveWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, bufferSize int) {
-	conn, err := hub.upgrader.Upgrade(w, r, nil)
+func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, bufferSize int) {
+	conn, err := hub.Upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
 		log.Println(err)
@@ -15,10 +15,10 @@ func serveWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, bufferSize
 	}
 
 	client := &Client{
-		hub:  hub,
-		conn: conn,
-		send: make(chan []byte, bufferSize),
-	}
+        hub: hub,
+        conn: conn,
+        Send: make(chan []byte, bufferSize),
+    }
 
 	client.hub.register <- client
 
