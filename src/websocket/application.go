@@ -1,38 +1,30 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
 	"github.com/qubard/claack-go/lib/postgres"
+	"github.com/qubard/claack-go/lib/util"
 	"github.com/qubard/claack-go/websocket/socket"
 )
 
 type Application struct {
-	cfg *Config
-	Hub *socket.Hub
-	db  *postgres.Database
+	Hub   *socket.Hub
+	db    *postgres.Database
+	redis *redis.Client
 }
 
-type Config struct {
-	ip         string
-	port       string
-	bufferSize int
-}
+func (app *Application) InitRedis(addr string, password string) error {
+	app.redis = redis.NewClient(&redis.Options{
+		Addr:     addr,
+		Password: password,
+		DB:       0,
+	})
 
-func (app *Application) ParseFlags() {
-	var cfg = Config{}
-	flag.StringVar(&cfg.ip, "ip", "localhost", "The ip address to bind to")
-	flag.StringVar(&cfg.port, "port", "4001", "The port to bind to")
-	flag.IntVar(&cfg.bufferSize, "bufferSize", 1024, "The size of the client send buffer")
-	flag.Parse()
-	app.cfg = &cfg
-}
-
-func (app *Application) AddRaceText(text string) error {
-	_, err := app.db.Handle().Exec(`INSERT INTO races(text) VALUES($1)`, text)
+	_, err := app.redis.Ping().Result()
 	return err
 }
 
@@ -72,24 +64,32 @@ func (app *Application) StartHub() {
 	go app.Hub.Run()
 }
 
-func (app *Application) HostEndpoint(endpoint string) {
+func (app *Application) HostEndpoint(endpoint string, ip string, port string, bufferSize int) {
 	http.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
-		socket.ServeWebsocket(app.Hub, w, r, app.cfg.bufferSize)
+		socket.ServeWebsocket(app.Hub, w, r, bufferSize)
 	})
 
-	log.Println("Started running server on", endpoint, app.cfg.ip, app.cfg.port)
-	err := http.ListenAndServe(":"+app.cfg.port, nil)
+	log.Println("Started running server on", endpoint, ip, port)
+	err := http.ListenAndServe(":"+port, nil)
 
 	if err != nil {
 		panic(err)
 	}
 }
 
-// The hub needs some way of accessing the database
-// So we just pass it in like this (dependency injection) so its handlers
-// can use the database if they need to
 func (app *Application) CreateHub() {
-	app.Hub = socket.CreateHub(app.db)
+	globalChan := util.CreateSubChannel(app.redis, "global")
+	mainChan := util.CreateSubChannel(app.redis, "hub1")
+
+	if globalChan == nil || mainChan == nil {
+		panic("Failed to create hub: invalid redis global channel or hub channel")
+	}
+
+	// The hub needs some way of accessing the database
+	// So we just pass it in like this (dependency injection) so its handlers
+	// can use the database if they need to.
+	// The other thing is we need to pass in channels for broadcast/directed messages
+	app.Hub = socket.CreateHub(app.db, globalChan, mainChan)
 }
 
 func CreateApp() *Application {

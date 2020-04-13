@@ -24,7 +24,7 @@ func (handler *RouteHandler) GetProfile(w http.ResponseWriter, r *http.Request) 
 // Using the authed username we can update that profile for that user
 func (handler *RouteHandler) UpdateProfile(w http.ResponseWriter, r *http.Request, username string) {
 	description := r.FormValue("Description")
-	alias := r.FormValue("Alias")
+	alias := r.FormValue("alias")
 	err := queries.UpdateProfileSimple(handler.Db, username, description, alias)
 	if err == nil {
 		// Return the new profile

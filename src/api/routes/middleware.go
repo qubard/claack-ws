@@ -28,6 +28,7 @@ func (handler *RouteHandler) AuthMiddleware(next AuthHandler, signKey []byte) fu
 		if username, ok := util.ExtractField(token, "username", signKey); ok {
 			// Check that the session is the last recorded session in the database.
 			// TODO: Cache the last session token instead
+			// TODO: Since this auth format is universal, make this a separate call
 			lastToken, err := queries.FindSessionToken(handler.Db, username.(string))
 			if err == nil && lastToken == token {
 				next(w, r, username.(string))

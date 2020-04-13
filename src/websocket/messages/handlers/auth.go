@@ -16,7 +16,7 @@ type ProfileMessage struct {
 func AuthUser(db *postgres.Database, client *socket.Client, msg interface{}) {
 	if token, ok := msg.(map[string]interface{})["token"]; ok && token != nil {
 		if username, ok := util.ExtractField(token.(string), "username", []byte("key")); ok {
-			// We have the user id (username), use it to find the user's profile
+			// We have the username, use it to find the user's profile
 			// and send the necessary profile update back
 			// Check that their last session is equal to this token
 			lastSession, err := queries.FindSessionToken(db, username.(string))
@@ -28,6 +28,7 @@ func AuthUser(db *postgres.Database, client *socket.Client, msg interface{}) {
 					Payload: *profile,
 				})
 
+				// Send the user back their profile information
 				if err == nil {
 					client.Send <- bytes
 				}

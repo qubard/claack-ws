@@ -8,3 +8,4 @@ the go port of my uhh..unreleased nodejs typing server
 - postgresql backend
 - service oriented
 - recaptcha support
+- "edge server" load balancing for websockets with [redis](https://redis.io/)

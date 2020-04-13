@@ -1,6 +1,7 @@
 package socket
 
 import (
+	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
 	"github.com/qubard/claack-go/lib/postgres"
 )
@@ -11,16 +12,20 @@ type Hub struct {
 	register   chan *Client
 	unregister chan *Client
 	Bus        *HandlerBus
+	globalChan <-chan *redis.Message // Messages received by every hub node
+	mainChan    <-chan *redis.Message // Messages specific to this hub only
+	id         string
 	Upgrader   *websocket.Upgrader
 }
 
-func CreateHub(database *postgres.Database) *Hub {
+func CreateHub(database *postgres.Database, globalChan <-chan *redis.Message, mainChan <-chan *redis.Message) *Hub {
 	return &Hub{
-		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
 		Bus:        CreateHandlerBus(database),
+		globalChan: globalChan, 
+		mainChan:    mainChan,    
 	}
 }
 
@@ -35,10 +40,10 @@ func (hub *Hub) Run() {
 				close(client.Send)
 			}
 			// Loop over all the clients and broadcast any messages
-		case message := <-hub.broadcast:
+		case message := <-hub.globalChan:
 			for client := range hub.clients {
 				select {
-				case client.Send <- message:
+				case client.Send <- []byte(message.Payload):
 				default:
 					// Close the socket
 					close(client.Send)
@@ -46,6 +51,8 @@ func (hub *Hub) Run() {
 					delete(hub.clients, client)
 				}
 			}
-		}
+		case message := <-hub.mainChan:
+			// Process messages only intended for specific users on this server
+		} 
 	}
 }

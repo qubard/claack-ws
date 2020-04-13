@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 
@@ -26,25 +27,14 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     filterOrigin,
 }
 
-type PayloadP struct {
-	Disconnect bool
-}
-
-type AuthUser struct {
-	Id      int8
-	Payload PayloadP
-}
-
-type ProfileDetails struct {
-	Avatar   string
-	Username string
-}
-
-type Profile struct {
-	Profile ProfileDetails
-}
-
 func main() {
+	var ip, port, addr string
+	var bufferSize int
+	flag.StringVar(&ip, "ip", "localhost", "The ip address to bind to")
+	flag.StringVar(&port, "port", "4001", "The port to bind to")
+	flag.IntVar(&bufferSize, "bufferSize", 1024, "The size of the client send buffer")
+	flag.StringVar(&addr, "redis", "", "The address (ip:port) of a redis instance")
+	flag.Parse()
 	// Create and use our websocket app
 	claack := CreateApp()
 	err := claack.InitDB("user=postgres dbname=claack sslmode=disable", "claack.schema")
@@ -56,16 +46,19 @@ func main() {
 		log.Println("Successfully initialized database!")
 	}
 
+	if err := claack.InitRedis(addr, ""); err != nil {
+		panic("Could not initialize redis connection!")
+	}
+
 	claack.CreateHub()
 
 	claack.SetUpgrader(&upgrader)
-	claack.ParseFlags()
 
 	claack.Hub.Bus.RegisterHandler(types.QueueRace, handlers.QueueRace)
 	claack.Hub.Bus.RegisterHandler(types.AuthUser, handlers.AuthUser)
 
 	claack.StartHub()
-	claack.HostEndpoint("/ws")
+	claack.HostEndpoint("/ws", ip, port, bufferSize)
 
 	defer claack.GetDB().Handle().Close()
 }

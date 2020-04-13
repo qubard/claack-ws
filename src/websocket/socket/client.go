@@ -52,7 +52,7 @@ func (c *Client) readPump() {
 				if msgType, ok := msgMap["type"].(types.MessageType); ok {
 					if payload, ok := msgMap["payload"]; ok {
 						c.hub.Bus.InvokeHandler(c, msgType, payload)
-					}
+					} // One handler may be to broadcast it to a specific user on another server..
 				}
 			}
 		}
@@ -70,6 +70,7 @@ func (c *Client) readPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
+// Write to c.Send to send the client a message
 func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
