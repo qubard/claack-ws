@@ -28,6 +28,10 @@ func AuthUser(db *postgres.Database, client *socket.Client, msg interface{}) {
 					Payload: *profile,
 				})
 
+				// Let the edge server know where the user is
+				client.Username = username.(string)
+				client.Hub.EdgeServer.RegisterUser(client.Username)
+
 				// Send the user back their profile information
 				if err == nil {
 					client.Send <- bytes

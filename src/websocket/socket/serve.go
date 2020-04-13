@@ -15,13 +15,13 @@ func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, bufferSize
 	}
 
 	client := &Client{
-		hub:  hub,
+		Hub:  hub,
 		conn: conn,
 		Send: make(chan []byte, bufferSize),
 	}
 
 	// Register the client to the hub
-	client.hub.register <- client
+	client.Hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.

@@ -22,11 +22,12 @@ const (
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	hub *Hub
+	Hub *Hub
 	// The websocket connection.
 	conn *websocket.Conn
 	// Buffered channel of outbound messages.
 	Send chan []byte
+	Username string // Client's authed username
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -35,7 +36,7 @@ type Client struct {
 // reads from this goroutine.
 func (c *Client) readPump() {
 	defer func() {
-		c.hub.unregister <- c
+		c.Hub.unregister <- c
 		c.conn.Close()
 	}()
 
@@ -51,7 +52,7 @@ func (c *Client) readPump() {
 			if msgMap, ok := msg.(map[string]interface{}); ok {
 				if msgType, ok := msgMap["type"].(types.MessageType); ok {
 					if payload, ok := msgMap["payload"]; ok {
-						c.hub.Bus.InvokeHandler(c, msgType, payload)
+						c.Hub.Bus.InvokeHandler(c, msgType, payload)
 					} // One handler may be to broadcast it to a specific user on another server..
 				}
 			}

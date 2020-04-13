@@ -50,7 +50,8 @@ func main() {
 		panic("Could not initialize redis connection!")
 	}
 
-	claack.CreateHub()
+	claack.CreateHub("hub1")
+	log.Println("Successfully connected hub with edge server")
 
 	claack.SetUpgrader(&upgrader)
 

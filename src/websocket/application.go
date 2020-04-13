@@ -77,19 +77,27 @@ func (app *Application) HostEndpoint(endpoint string, ip string, port string, bu
 	}
 }
 
-func (app *Application) CreateHub() {
+func (app *Application) createEdgeServer(name string) *socket.EdgeServer {
 	globalChan := util.CreateSubChannel(app.redis, "global")
-	mainChan := util.CreateSubChannel(app.redis, "hub1")
+	mainChan := util.CreateSubChannel(app.redis, name)
 
 	if globalChan == nil || mainChan == nil {
 		panic("Failed to create hub: invalid redis global channel or hub channel")
 	}
 
+	return &socket.EdgeServer {
+		Redis:		app.redis,
+		Id:			name,
+		GlobalChan: globalChan,
+		MainChan:	mainChan,
+	}
+}
+
+func (app *Application) CreateHub(edgeName string) {
 	// The hub needs some way of accessing the database
 	// So we just pass it in like this (dependency injection) so its handlers
 	// can use the database if they need to.
-	// The other thing is we need to pass in channels for broadcast/directed messages
-	app.Hub = socket.CreateHub(app.db, globalChan, mainChan)
+	app.Hub = socket.CreateHub(app.db, app.createEdgeServer(edgeName))
 }
 
 func CreateApp() *Application {

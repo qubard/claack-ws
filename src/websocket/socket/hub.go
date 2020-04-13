@@ -1,7 +1,6 @@
 package socket
 
 import (
-	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
 	"github.com/qubard/claack-go/lib/postgres"
 )
@@ -12,20 +11,18 @@ type Hub struct {
 	register   chan *Client
 	unregister chan *Client
 	Bus        *HandlerBus
-	globalChan <-chan *redis.Message // Messages received by every hub node
-	mainChan    <-chan *redis.Message // Messages specific to this hub only
-	id         string
+	EdgeServer *EdgeServer
 	Upgrader   *websocket.Upgrader
 }
 
-func CreateHub(database *postgres.Database, globalChan <-chan *redis.Message, mainChan <-chan *redis.Message) *Hub {
+func CreateHub(database *postgres.Database, edgeServer *EdgeServer) *Hub {
 	return &Hub{
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
 		Bus:        CreateHandlerBus(database),
-		globalChan: globalChan, 
-		mainChan:    mainChan,    
+		EdgeServer: edgeServer,
+		clientLookup: make(map[string]*Client),
 	}
 }
 
@@ -36,11 +33,12 @@ func (hub *Hub) Run() {
 			hub.clients[client] = true
 		case client := <-hub.unregister:
 			if _, ok := hub.clients[client]; ok {
+				hub.EdgeServer.UnregisterUser(client.Username)
 				delete(hub.clients, client)
 				close(client.Send)
 			}
-			// Loop over all the clients and broadcast any messages
-		case message := <-hub.globalChan:
+		// Loop over all the clients and broadcast any messages
+		case message := <-hub.EdgeServer.GlobalChan:
 			for client := range hub.clients {
 				select {
 				case client.Send <- []byte(message.Payload):
@@ -49,10 +47,13 @@ func (hub *Hub) Run() {
 					close(client.Send)
 					// Remove the client from the map
 					delete(hub.clients, client)
+					hub.EdgeServer.UnregisterUser(client.Username)
 				}
 			}
-		case message := <-hub.mainChan:
+		/*case message := <-hub.EdgeServer.MainChan:
 			// Process messages only intended for specific users on this server
-		} 
+			// Find the user it belongs to
+			message = nil*/
+		}
 	}
 }
