@@ -39,7 +39,7 @@ func main() {
 
 	muxer.HandleFunc("/auth/login/", router.Login)
 	muxer.HandleFunc("/auth/register/", router.Register)
-	muxer.HandleFunc("/profile/{username}/", router.Profile)
+	muxer.HandleFunc("/profile/{username}/", router.GetProfile)
 	muxer.HandleFunc("/update/profile/", router.AuthMiddleware(router.UpdateProfile, []byte("key")))
 
 	corsOpts := cors.New(cors.Options{

@@ -79,17 +79,18 @@ func (app *Application) HostEndpoint(endpoint string, ip string, port string, bu
 
 func (app *Application) createEdgeServer(name string) *socket.EdgeServer {
 	globalChan := util.CreateSubChannel(app.redis, "global")
-	mainChan := util.CreateSubChannel(app.redis, name)
+	relayChan := util.CreateSubChannel(app.redis, name)
 
-	if globalChan == nil || mainChan == nil {
+	if globalChan == nil || relayChan == nil {
 		panic("Failed to create hub: invalid redis global channel or hub channel")
 	}
 
 	return &socket.EdgeServer {
-		Redis:		app.redis,
-		Id:			name,
-		GlobalChan: globalChan,
-		MainChan:	mainChan,
+		Redis:		  app.redis,
+		Id:			  name,
+		GlobalChan:   globalChan,
+		RelayChan:	  relayChan,
+		ClientTable:  make(map[string]*socket.Client),
 	}
 }
 

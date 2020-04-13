@@ -29,8 +29,14 @@ func AuthUser(db *postgres.Database, client *socket.Client, msg interface{}) {
 				})
 
 				// Let the edge server know where the user is
+				// We only register the client to the edge server
+				// on successful auth
 				client.Username = username.(string)
-				client.Hub.EdgeServer.RegisterUser(client.Username)
+
+				client.Hub.EdgeServer.RegisterClient(client)
+	
+				// TODO: If there is more than one client, disconnect the old one here.
+				// which involves sending a message to the hub from another ws server
 
 				// Send the user back their profile information
 				if err == nil {

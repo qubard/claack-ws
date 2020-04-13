@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/qubard/claack-go/lib/util"
-	"github.com/qubard/claack-go/websocket/messages/types"
 )
 
 const (
@@ -49,13 +48,7 @@ func (c *Client) readPump() {
 
 		if err == nil {
 			// When we receive a message pass it to a registered handler
-			if msgMap, ok := msg.(map[string]interface{}); ok {
-				if msgType, ok := msgMap["type"].(types.MessageType); ok {
-					if payload, ok := msgMap["payload"]; ok {
-						c.Hub.Bus.InvokeHandler(c, msgType, payload)
-					} // One handler may be to broadcast it to a specific user on another server..
-				}
-			}
+			c.Hub.Bus.AttemptInvokeHandler(c, msg)
 		}
 
 		if err != nil {

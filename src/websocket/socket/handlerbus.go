@@ -41,3 +41,13 @@ func (bus *HandlerBus) InvokeHandler(client *Client, id types.MessageType, paylo
 		handler(bus.db, client, payload)
 	}
 }
+
+func (bus *HandlerBus) AttemptInvokeHandler(client *Client, msg interface{}) {
+	if msgMap, ok := msg.(map[string]interface{}); ok {
+		if msgType, ok := msgMap["type"].(types.MessageType); ok {
+			if payload, ok := msgMap["payload"]; ok {
+				bus.InvokeHandler(client, msgType, payload)
+			}
+		}
+	}
+}
