@@ -21,6 +21,7 @@ const (
 	AddMessage         MessageType = 15
 	PlayerDisconnected MessageType = 16
 	AuthUser           MessageType = 17 // Send in a token, authenticate user
+	MessageDelivered   MessageType = 18
 )
 
 type RelayMessage struct {

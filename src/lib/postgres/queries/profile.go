@@ -44,7 +44,7 @@ func UpdateProfile(database *postgres.Database, username string, description str
 }
 
 func UpdateProfileSimple(database *postgres.Database, username string, description string, alias string) error {
-	_, err := database.Handle().Exec(`UPDATE profile SET description=$2, alias=$3 FROM auth WHERE auth.username=$1`, username, description, alias)
+	_, err := database.Handle().Exec(`UPDATE profile SET description=$2, alias=$3 FROM auth WHERE (profile.id=auth.id and auth.username=$1)`, username, description, alias)
 	return err
 }
 

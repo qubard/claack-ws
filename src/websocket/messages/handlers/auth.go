@@ -33,6 +33,8 @@ func AuthUser(db *postgres.Database, client *socket.Client, msg interface{}) {
 				// on successful auth
 				client.Username = username.(string)
 
+				// None of the handler routines are threadsafe,
+				// But since RegisterClient is threadsafe this works
 				client.Hub.EdgeServer.RegisterClient(client)
 	
 				// TODO: If there is more than one client, disconnect the old one here.
@@ -42,7 +44,7 @@ func AuthUser(db *postgres.Database, client *socket.Client, msg interface{}) {
 				if err == nil {
 					client.Send <- bytes
 				}
-			}
+			} 
 		}
 	}
 }

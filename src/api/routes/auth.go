@@ -83,6 +83,7 @@ func (handler *RouteHandler) Register(w http.ResponseWriter, r *http.Request) {
 					queries.CreateRep(handler.Db, authRow.Id, 0)
 
 					token, _ := queries.GenerateSession(handler.Db, username, []byte(handler.Secret))
+					queries.InsertSession(handler.Db, authRow.Id, token)
 
 					response := AuthResponse{
 						Message: "Successfully registered",

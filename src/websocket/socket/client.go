@@ -16,7 +16,7 @@ const (
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
 	// Maximum message size allowed from peer.
-	maxMessageSize = 512
+	maxMessageSize = 3 * 1024 // Max 3KiB
 )
 
 // Client is a middleman between the websocket connection and the hub.
@@ -27,6 +27,15 @@ type Client struct {
 	// Buffered channel of outbound messages.
 	Send chan []byte
 	Username string // Client's authed username
+}
+
+func (client *Client) SendMessage(msg interface{}) error {
+	bytes, err := util.WritePackedMessage(msg)
+	
+	if err == nil {
+		client.Send <- bytes
+	}
+	return err
 }
 
 // readPump pumps messages from the websocket connection to the hub.

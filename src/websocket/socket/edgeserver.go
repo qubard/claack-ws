@@ -13,7 +13,7 @@ type EdgeServer struct {
 	GlobalChan <-chan *redis.Message // Messages received by every hub node
 	RelayChan  <-chan *redis.Message // Messages specific to this hub only
 	ClientTable map[string]*Client
-	Mutex       sync.Mutex
+	Mutex       sync.Mutex // We can either use a channel and a separate goroutine or a mutex to update ClientTable
 }
 
 // Find the channel the user maps to
@@ -34,7 +34,9 @@ func (server* EdgeServer) RelayMessage(dstId string, msg interface{}) error {
 		return err
 	}
 
-	if client, present := server.ClientTable[dstId]; present {
+	// Generally avoid this case because it acquires the lock
+	// But in practice this can't slow us down TOO much?
+	if client := server.AcquireClient(dstId); client != nil {
 		client.Send <- bytes
 	} else {
 		// Client is not present locally, construct a relay message
@@ -44,6 +46,7 @@ func (server* EdgeServer) RelayMessage(dstId string, msg interface{}) error {
 				DstId: dstId,
 				Message: string(bytes),
 			}
+			// Relay the message to the other server
 			if relayBytes, err := util.WritePackedMessage(relayMsg); err == nil {
 				server.Redis.Publish(channelId, relayBytes)
 			}

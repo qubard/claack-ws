@@ -16,6 +16,16 @@ type ChatMessagePayload struct {
 	To string
 }
 
+type MessageDeliveredPayload struct {
+	To string
+	Id int // The message identifier that is seen
+}
+
+type MessageDelivered struct {
+	Type types.MessageType
+	Payload MessageDeliveredPayload
+}
+
 type ChatMessage struct {
 	Type types.MessageType
 	Payload ChatMessagePayload
@@ -24,10 +34,29 @@ type ChatMessage struct {
 func AddMessage(db *postgres.Database, client *socket.Client, msg interface{}) {
 	var payload ChatMessagePayload
 	if err := mapstructure.Decode(msg, &payload); err == nil {
+		// We don't use Payload.From since it's controlled by the client
+		// instead use their auth credentials
+		payload.From = client.Username
+
 		chatMsg := ChatMessage {
 			Type: types.AddMessage,
 			Payload: payload,
 		}
-		client.Hub.EdgeServer.RelayMessage(payload.To, chatMsg)
+		
+		// Send the actual message
+		err = client.Hub.EdgeServer.RelayMessage(payload.To, chatMsg)
+
+		// Let the client know their message has been delivered
+		// Attach an Id so they know which message it was
+		if err == nil {
+			ok := client.SendMessage(MessageDelivered {
+				Type: types.MessageDelivered,
+				Payload: MessageDeliveredPayload {
+					To: payload.To,
+					Id: payload.Id,
+				},
+			})
+		}
+		// TODO: alert the user their message could not be delivered
 	}
 }
