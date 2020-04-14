@@ -1,6 +1,7 @@
 package socket
 
 import (
+	"sync"
 	"github.com/qubard/claack-go/lib/util"
 	"github.com/qubard/claack-go/websocket/messages/types"
 	"github.com/go-redis/redis/v7"
@@ -12,6 +13,7 @@ type EdgeServer struct {
 	GlobalChan <-chan *redis.Message // Messages received by every hub node
 	RelayChan  <-chan *redis.Message // Messages specific to this hub only
 	ClientTable map[string]*Client
+	Mutex       sync.Mutex
 }
 
 // Find the channel the user maps to
@@ -32,7 +34,7 @@ func (server* EdgeServer) RelayMessage(dstId string, msg interface{}) error {
 		return err
 	}
 
-	if client, present := server.ClientTable[dstId]; !present {
+	if client, present := server.ClientTable[dstId]; present {
 		client.Send <- bytes
 	} else {
 		// Client is not present locally, construct a relay message
@@ -51,8 +53,16 @@ func (server* EdgeServer) RelayMessage(dstId string, msg interface{}) error {
 	return nil
 }
 
+func (server *EdgeServer) AcquireClient(id string) *Client {
+	server.Mutex.Lock()
+	defer server.Mutex.Unlock()
+	return server.ClientTable[id]
+}
+
 func (server *EdgeServer) RegisterClient(client *Client) {
 	// Register user in redis to the current server's Id
+	server.Mutex.Lock()
+	defer server.Mutex.Unlock()
 	err := server.Redis.Set(client.Username, server.Id, 0).Err()
 	server.ClientTable[client.Username] = client
 
@@ -62,6 +72,8 @@ func (server *EdgeServer) RegisterClient(client *Client) {
 }
 
 func (server *EdgeServer) UnregisterClient(client *Client) {
+	server.Mutex.Lock()
+	defer server.Mutex.Unlock()
 	server.Redis.Del(client.Username)
 	delete(server.ClientTable, client.Username)
 }

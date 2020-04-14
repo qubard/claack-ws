@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
@@ -91,6 +92,7 @@ func (app *Application) createEdgeServer(name string) *socket.EdgeServer {
 		GlobalChan:   globalChan,
 		RelayChan:	  relayChan,
 		ClientTable:  make(map[string]*socket.Client),
+		Mutex: 		  sync.Mutex{},
 	}
 }
 

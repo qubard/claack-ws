@@ -55,7 +55,7 @@ func (hub *Hub) Run() {
 			relay, err := util.ReadRelayMessage(message.Payload)
 			if err == nil {
 				// Valid auth token for relay, lookup which client it belongs to
-				if client, present := hub.EdgeServer.ClientTable[relay.DstId]; present {
+				if client := hub.EdgeServer.AcquireClient(relay.DstId); client != nil {
 					// We have found a valid authorized client
 					// Relay the message to the client
 					client.Send <- []byte(relay.Message)
