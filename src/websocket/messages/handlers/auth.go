@@ -14,7 +14,7 @@ type ProfileMessage struct {
 }
 
 func AuthUser(db *postgres.Database, client *socket.Client, msg interface{}) {
-	if token, ok := msg.(map[string]interface{})["token"]; ok && token != nil {
+	if token, ok := msg.(map[string]interface{})["Token"]; ok && token != nil {
 		if username, ok := util.ExtractField(token.(string), "username", []byte("key")); ok {
 			// We have the username, use it to find the user's profile
 			// and send the necessary profile update back

@@ -22,3 +22,8 @@ const (
 	PlayerDisconnected MessageType = 16
 	AuthUser           MessageType = 17 // Send in a token, authenticate user
 )
+
+type RelayMessage struct {
+	DstId string // The id of the user we're sending the message to
+	Message string // The packed message
+}

@@ -45,7 +45,9 @@ func (bus *HandlerBus) InvokeHandler(client *Client, id types.MessageType, paylo
 func (bus *HandlerBus) AttemptInvokeHandler(client *Client, msg interface{}) {
 	if msgMap, ok := msg.(map[string]interface{}); ok {
 		if msgType, ok := msgMap["type"].(types.MessageType); ok {
-			if payload, ok := msgMap["payload"]; ok {
+			// Yes, actions being defined as "lowercase types" is some dumb shit
+			// associated with Redux
+			if payload, ok := msgMap["Payload"]; ok {
 				bus.InvokeHandler(client, msgType, payload)
 			}
 		}

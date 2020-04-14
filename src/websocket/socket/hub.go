@@ -54,16 +54,11 @@ func (hub *Hub) Run() {
 			// Process messages only intended for specific users on this server
 			relay, err := util.ReadRelayMessage(message.Payload)
 			if err == nil {
-				// TODO: no more global keys (FLAG THIS ONCE AGAIN)
-				username, ok := util.ExtractField(relay.DstToken, "username", []byte("key"))
-				if ok {
-					// Valid auth token for relay, lookup which client it belongs to
-					if client, present := hub.EdgeServer.ClientTable[username.(string)]; present {
-						// We have found a valid authorized client
-						// Relay the message to the client
-						// connected to.
-						client.Send <- []byte(relay.Message)
-					}
+				// Valid auth token for relay, lookup which client it belongs to
+				if client, present := hub.EdgeServer.ClientTable[relay.DstId]; present {
+					// We have found a valid authorized client
+					// Relay the message to the client
+					client.Send <- []byte(relay.Message)
 				}
 			}
 		}

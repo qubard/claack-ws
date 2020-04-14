@@ -57,6 +57,7 @@ func main() {
 
 	claack.Hub.Bus.RegisterHandler(types.QueueRace, handlers.QueueRace)
 	claack.Hub.Bus.RegisterHandler(types.AuthUser, handlers.AuthUser)
+	claack.Hub.Bus.RegisterHandler(types.AddMessage, handlers.AddMessage)
 
 	claack.StartHub()
 	claack.HostEndpoint("/ws", ip, port, bufferSize)

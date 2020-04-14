@@ -2,7 +2,6 @@ package queries
 
 import (
 	"github.com/qubard/claack-go/lib/postgres"
-	"time"
 )
 
 type ProfileRow struct {
@@ -23,7 +22,7 @@ type FullProfileRow struct {
 	Location    string // Location of avatar
 	Elo         int
 	Rep         int
-	CreatedAt   time.Time
+	CreatedAt   string
 }
 
 func FindProfile(database *postgres.Database, username string) (*ProfileRow, error) {

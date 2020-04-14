@@ -4,14 +4,10 @@ import (
 	"bufio"
 	"bytes"
 
+	"github.com/qubard/claack-go/websocket/messages/types"
 	"github.com/gorilla/websocket"
 	"github.com/vmihailenco/msgpack"
 )
-
-type RelayMessage struct {
-	DstToken string // The token of the user we're sending the message to
-	Message string // The packed message
-}
 
 // Unfortunately we cannot define new methods on non-local types
 func ReadPackedMessage(c *websocket.Conn) (interface{}, error) {
@@ -23,8 +19,8 @@ func ReadPackedMessage(c *websocket.Conn) (interface{}, error) {
 }
 
 // Read a (packed) relay message
-func ReadRelayMessage(msg string) (*RelayMessage, error) {
-	var relay RelayMessage
+func ReadRelayMessage(msg string) (*types.RelayMessage, error) {
+	var relay types.RelayMessage
 	err := msgpack.Unmarshal([]byte(msg), &relay)
 	return &relay, err
 }
