@@ -1,17 +1,17 @@
 package socket
 
 import (
-	"sync"
+	"github.com/go-redis/redis/v7"
 	"github.com/qubard/claack-go/lib/util"
 	"github.com/qubard/claack-go/websocket/messages/types"
-	"github.com/go-redis/redis/v7"
+	"sync"
 )
 
 type EdgeServer struct {
-	Redis	   *redis.Client
-	Id 		   string // Id of this edge server for incoming relays
-	GlobalChan <-chan *redis.Message // Messages received by every hub node
-	RelayChan  <-chan *redis.Message // Messages specific to this hub only
+	Redis       *redis.Client
+	Id          string                // Id of this edge server for incoming relays
+	GlobalChan  <-chan *redis.Message // Messages received by every hub node
+	RelayChan   <-chan *redis.Message // Messages specific to this hub only
 	ClientTable map[string]*Client
 	Mutex       sync.Mutex // We can either use a channel and a separate goroutine or a mutex to update ClientTable
 }
@@ -27,9 +27,9 @@ func (server *EdgeServer) FindClientById(id string) (string, error) {
 
 // Sends a message to the user with id dstId
 // If it currently exists on the server, otherwise relay it!
-func (server* EdgeServer) RelayMessage(dstId string, msg interface{}) error {
+func (server *EdgeServer) RelayMessage(dstId string, msg interface{}) error {
 	bytes, err := util.WritePackedMessage(msg)
-	
+
 	if err != nil {
 		return err
 	}
@@ -42,11 +42,11 @@ func (server* EdgeServer) RelayMessage(dstId string, msg interface{}) error {
 		// Client is not present locally, construct a relay message
 		// Do a lookup for their channelId, then relay a message there
 		if channelId, err := server.FindClientById(dstId); err == nil {
-			relayMsg := types.RelayMessage {
-				DstId: dstId,
+			relayMsg := types.RelayMessage{
+				DstId:   dstId,
 				Message: string(bytes),
 			}
-			// Relay the message to the other server
+			// Relay the message to the desired server
 			if relayBytes, err := util.WritePackedMessage(relayMsg); err == nil {
 				server.Redis.Publish(channelId, relayBytes)
 			}

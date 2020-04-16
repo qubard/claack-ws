@@ -32,7 +32,7 @@ func main() {
 	var bufferSize int
 	flag.StringVar(&ip, "ip", "localhost", "The ip address to bind to")
 	flag.StringVar(&port, "port", "4001", "The port to bind to")
-	flag.IntVar(&bufferSize, "bufferSize", 1024 * 10, "The size of the client send buffer")
+	flag.IntVar(&bufferSize, "bufferSize", 1024*10, "The size of the client send buffer")
 	flag.StringVar(&addr, "redis", "", "The address (ip:port) of a redis instance")
 	flag.Parse()
 	// Create and use our websocket app

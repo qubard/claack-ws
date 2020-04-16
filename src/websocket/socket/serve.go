@@ -3,6 +3,7 @@ package socket
 import (
 	"log"
 	"net/http"
+	"time"
 )
 
 // serveWebsocket handles websocket requests from the peer.
@@ -18,6 +19,12 @@ func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, bufferSize
 		Hub:  hub,
 		conn: conn,
 		Send: make(chan []byte, bufferSize),
+		Limiter: &RateLimiter{
+			Count:         0,
+			LastRecNano:   time.Now().UnixNano(),
+			WindowSizeMs:  100,
+			ThrottleLimit: 10,
+		},
 	}
 
 	// Register the client to the hub

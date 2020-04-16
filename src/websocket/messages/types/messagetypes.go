@@ -25,6 +25,6 @@ const (
 )
 
 type RelayMessage struct {
-	DstId string // The id of the user we're sending the message to
+	DstId   string // The id of the user we're sending the message to
 	Message string // The packed message
 }

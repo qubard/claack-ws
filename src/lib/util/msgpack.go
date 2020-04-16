@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"bytes"
 
-	"github.com/qubard/claack-go/websocket/messages/types"
 	"github.com/gorilla/websocket"
+	"github.com/qubard/claack-go/websocket/messages/types"
 	"github.com/vmihailenco/msgpack"
 )
 

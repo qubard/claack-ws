@@ -1,19 +1,19 @@
 package handlers
 
 import (
-	"github.com/qubard/claack-go/websocket/messages/types"
-	"github.com/qubard/claack-go/lib/postgres"
-	"github.com/qubard/claack-go/websocket/socket"
 	"github.com/mitchellh/mapstructure"
+	"github.com/qubard/claack-go/lib/postgres"
+	"github.com/qubard/claack-go/websocket/messages/types"
+	"github.com/qubard/claack-go/websocket/socket"
 )
 
 type ChatMessagePayload struct {
-	From string
-	Id int
-	Location string
-	Text string
+	From      string
+	Id        int
+	Location  string
+	Text      string
 	Timestamp int
-	To string
+	To        string
 }
 
 type MessageDeliveredPayload struct {
@@ -22,12 +22,12 @@ type MessageDeliveredPayload struct {
 }
 
 type MessageDelivered struct {
-	Type types.MessageType
+	Type    types.MessageType
 	Payload MessageDeliveredPayload
 }
 
 type ChatMessage struct {
-	Type types.MessageType
+	Type    types.MessageType
 	Payload ChatMessagePayload
 }
 
@@ -38,20 +38,20 @@ func AddMessage(db *postgres.Database, client *socket.Client, msg interface{}) {
 		// instead use their auth credentials
 		payload.From = client.Username
 
-		chatMsg := ChatMessage {
-			Type: types.AddMessage,
+		chatMsg := ChatMessage{
+			Type:    types.AddMessage,
 			Payload: payload,
 		}
-		
+
 		// Send the actual message
 		err = client.Hub.EdgeServer.RelayMessage(payload.To, chatMsg)
 
 		// Let the client know their message has been delivered
 		// Attach an Id so they know which message it was
 		if err == nil {
-			ok := client.SendMessage(MessageDelivered {
+			client.SendMessage(MessageDelivered{
 				Type: types.MessageDelivered,
-				Payload: MessageDeliveredPayload {
+				Payload: MessageDeliveredPayload{
 					To: payload.To,
 					Id: payload.Id,
 				},

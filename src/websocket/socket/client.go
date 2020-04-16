@@ -19,19 +19,42 @@ const (
 	maxMessageSize = 3 * 1024 // Max 3KiB
 )
 
+func (limiter *RateLimiter) DoLimit(client *Client) bool {
+	currTimeNano := time.Now().UnixNano()
+	if currTimeNano-client.Limiter.LastRecNano >= 1e6*limiter.WindowSizeMs {
+		if client.Limiter.Count > client.Limiter.ThrottleLimit {
+			return true
+		}
+		// Reset the 1 second window (1e6 ms)
+		client.Limiter.Count = 0
+		client.Limiter.LastRecNano = time.Now().UnixNano()
+	} else {
+		client.Limiter.Count = client.Limiter.Count + 1
+	}
+	return false
+}
+
+type RateLimiter struct {
+	WindowSizeMs  int64  // Window size in milliseconds
+	Count         uint64 // The number of packets since the last send
+	LastRecNano   int64  // The time they last sent a packet in nanoseconds
+	ThrottleLimit uint64 // The max value of `count` before throttling
+}
+
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
 	Hub *Hub
 	// The websocket connection.
 	conn *websocket.Conn
 	// Buffered channel of outbound messages.
-	Send chan []byte
+	Send     chan []byte
 	Username string // Client's authed username
+	Limiter  *RateLimiter
 }
 
 func (client *Client) SendMessage(msg interface{}) error {
 	bytes, err := util.WritePackedMessage(msg)
-	
+
 	if err == nil {
 		client.Send <- bytes
 	}
@@ -54,6 +77,12 @@ func (c *Client) readPump() {
 
 	for {
 		msg, err := util.ReadPackedMessage(c.conn)
+
+		if c.Limiter.DoLimit(c) {
+			// If the client is rate limited, drop them immediately
+			// And maybe ban them?
+			return
+		}
 
 		if err == nil {
 			// When we receive a message pass it to a registered handler

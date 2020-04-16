@@ -86,13 +86,13 @@ func (app *Application) createEdgeServer(name string) *socket.EdgeServer {
 		panic("Failed to create hub: invalid redis global channel or hub channel")
 	}
 
-	return &socket.EdgeServer {
-		Redis:		  app.redis,
-		Id:			  name,
-		GlobalChan:   globalChan,
-		RelayChan:	  relayChan,
-		ClientTable:  make(map[string]*socket.Client),
-		Mutex: 		  sync.Mutex{},
+	return &socket.EdgeServer{
+		Redis:       app.redis,
+		Id:          name,
+		GlobalChan:  globalChan,
+		RelayChan:   relayChan,
+		ClientTable: make(map[string]*socket.Client),
+		Mutex:       sync.Mutex{},
 	}
 }
 

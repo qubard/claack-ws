@@ -2,8 +2,8 @@ package socket
 
 import (
 	"github.com/gorilla/websocket"
-	"github.com/qubard/claack-go/lib/util"
 	"github.com/qubard/claack-go/lib/postgres"
+	"github.com/qubard/claack-go/lib/util"
 )
 
 type Hub struct {
@@ -18,11 +18,11 @@ type Hub struct {
 
 func CreateHub(database *postgres.Database, edgeServer *EdgeServer) *Hub {
 	return &Hub{
-		register:      make(chan *Client),
-		unregister:    make(chan *Client),
-		clients:       make(map[*Client]bool),
-		Bus:           CreateHandlerBus(database),
-		EdgeServer:    edgeServer,
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
+		clients:    make(map[*Client]bool),
+		Bus:        CreateHandlerBus(database),
+		EdgeServer: edgeServer,
 	}
 }
 
