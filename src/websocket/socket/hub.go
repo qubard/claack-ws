@@ -27,7 +27,10 @@ func CreateHub(database *postgres.Database, edgeServer *EdgeServer) *Hub {
 }
 
 func (hub *Hub) UnregisterClient(client *Client) {
-	hub.EdgeServer.UnregisterClient(client)
+	// Don't unregister the user if they aren't even authed
+	if client.Credentials != nil {
+		hub.EdgeServer.UnregisterClient(client)
+	}
 	delete(hub.clients, client)
 	close(client.Send)
 }

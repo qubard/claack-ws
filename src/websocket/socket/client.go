@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/qubard/claack-go/lib/postgres"
 	"github.com/qubard/claack-go/lib/util"
 )
 
@@ -18,6 +19,14 @@ const (
 	// Maximum message size allowed from peer.
 	maxMessageSize = 3 * 1024 // Max 3KiB
 )
+
+func AuthMiddleware(handler MessageHandler) MessageHandler {
+	return func(database *postgres.Database, client *Client, msg interface{}) {
+		if client.Credentials != nil {
+			handler(database, client, msg)
+		}
+	}
+}
 
 func (limiter *RateLimiter) DoLimit(client *Client) bool {
 	currTimeNano := time.Now().UnixNano()
@@ -41,15 +50,19 @@ type RateLimiter struct {
 	ThrottleLimit uint64 // The max value of `count` before throttling
 }
 
+type AuthCredentials struct {
+	Username string
+}
+
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
 	Hub *Hub
 	// The websocket connection.
 	conn *websocket.Conn
 	// Buffered channel of outbound messages.
-	Send     chan []byte
-	Username string // Client's authed username
-	Limiter  *RateLimiter
+	Send        chan []byte
+	Credentials *AuthCredentials
+	Limiter     *RateLimiter
 }
 
 func (client *Client) SendMessage(msg interface{}) error {

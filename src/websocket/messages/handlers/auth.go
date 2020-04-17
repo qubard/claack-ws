@@ -31,7 +31,9 @@ func AuthUser(db *postgres.Database, client *socket.Client, msg interface{}) {
 				// Let the edge server know where the user is
 				// We only register the client to the edge server
 				// on successful auth
-				client.Username = username.(string)
+				client.Credentials = &socket.AuthCredentials{
+					Username: username.(string),
+				}
 
 				// None of the handler routines are threadsafe,
 				// But since RegisterClient is threadsafe this works

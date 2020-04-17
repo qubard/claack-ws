@@ -36,7 +36,7 @@ func AddMessage(db *postgres.Database, client *socket.Client, msg interface{}) {
 	if err := mapstructure.Decode(msg, &payload); err == nil {
 		// We don't use Payload.From since it's controlled by the client
 		// instead use their auth credentials
-		payload.From = client.Username
+		payload.From = client.Credentials.Username
 
 		chatMsg := ChatMessage{
 			Type:    types.AddMessage,

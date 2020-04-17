@@ -9,6 +9,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/qubard/claack-go/lib/postgres"
 	"github.com/qubard/claack-go/lib/util"
+	"github.com/qubard/claack-go/websocket/messages/handlers"
+	"github.com/qubard/claack-go/websocket/messages/types"
 	"github.com/qubard/claack-go/websocket/socket"
 )
 
@@ -27,6 +29,12 @@ func (app *Application) InitRedis(addr string, password string) error {
 
 	_, err := app.redis.Ping().Result()
 	return err
+}
+
+func (app *Application) RegisterHandlers() {
+	app.Hub.Bus.RegisterHandler(types.QueueRace, socket.AuthMiddleware(handlers.QueueRace))
+	app.Hub.Bus.RegisterHandler(types.AuthUser, handlers.AuthUser)
+	app.Hub.Bus.RegisterHandler(types.AddMessage, handlers.AddMessage)
 }
 
 func (app *Application) InitDB(connStr string, schemaFile string) error {

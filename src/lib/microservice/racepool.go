@@ -2,6 +2,7 @@ package microservice
 
 import (
 	"github.com/go-redis/redis/v7"
+	"github.com/qubard/claack-go/lib/ds"
 	"github.com/qubard/claack-go/lib/util"
 	"log"
 	"time"
@@ -60,44 +61,10 @@ type ActiveRace struct {
 // aren't in anymore we can just drop the packet if it doesn't match
 // their current race id from local state
 
-const (
-	MAX_POOL_SIZE = 100000 // Allocate enough pool space for 100,000 users
-)
-
-type LinkNode struct {
-	Next  *LinkNode
-	Prev  *LinkNode
-	Value string
-}
-
-type LinkedList struct {
-	Dummy *LinkNode
-	Tail  *LinkNode
-	m     map[string]*LinkNode // Assume unique keys
-}
-
-func (list *LinkedList) Push(val string) {
-	tmp := LinkNode{}
-	tmp.Prev = list.Tail
-	tmp.Value = val
-	list.Tail.Next = &tmp
-	list.Tail = &tmp
-	list.m[val] = &tmp
-}
-
-func (list *LinkedList) Remove(val string) {
-	curr := list.m[val]
-	if curr.Next != nil {
-		curr.Next.Prev = curr.Prev
-	}
-	curr.Prev.Next = curr.Next.Next
-
-}
-
 type RacePool struct {
-	Id       string // The identifier of the pool in Redis
-	Redis    *redis.Client
-	Unpooled []string
+	Id    string // The identifier of the pool in Redis
+	Redis *redis.Client
+	Pool  *ds.LinkedList
 	// Inbound join pool messages
 	EnqueueChan <-chan *redis.Message
 	// Inbound remove from pool messages
@@ -132,14 +99,10 @@ func (pool *RacePool) Run() {
 		// `id` wants to join the pool
 		case message := <-pool.EnqueueChan:
 			id := message.Payload
-			// We will assume this data is sane and is the user's id
-			pool.Unpooled = append(pool.Unpooled, id)
-			log.Println("pool", id)
+			pool.Pool.Push(id)
+			log.Println("push")
 		case message := <-pool.DequeueChan:
-			id := message.Payload
-			log.Println("unpool", id)
-			// TODO: convert this to a linked list + a map so we can
-			// O(1) removal and O(1) adding
+			pool.Pool.Remove(message.Payload)
 		}
 	}
 }
@@ -150,6 +113,6 @@ func CreateRacePool(client *redis.Client, id string, enqChanId string, deqChanId
 		Redis:       client,
 		EnqueueChan: util.CreateSubChannel(client, enqChanId),
 		DequeueChan: util.CreateSubChannel(client, deqChanId),
-		Unpooled:    make([]string, MAX_POOL_SIZE),
+		Pool:        ds.CreateLinkedList(),
 	}
 }

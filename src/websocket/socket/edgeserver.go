@@ -18,7 +18,7 @@ type EdgeServer struct {
 
 // Find the channel the user maps to
 func (server *EdgeServer) FindClient(client *Client) (string, error) {
-	return server.FindClientById(client.Username)
+	return server.FindClientById(client.Credentials.Username)
 }
 
 func (server *EdgeServer) FindClientById(id string) (string, error) {
@@ -34,8 +34,6 @@ func (server *EdgeServer) RelayMessage(dstId string, msg interface{}) error {
 		return err
 	}
 
-	// Generally avoid this case because it acquires the lock
-	// But in practice this can't slow us down TOO much?
 	if client := server.AcquireClient(dstId); client != nil {
 		client.Send <- bytes
 	} else {
@@ -66,8 +64,8 @@ func (server *EdgeServer) RegisterClient(client *Client) {
 	// Register user in redis to the current server's Id
 	server.Mutex.Lock()
 	defer server.Mutex.Unlock()
-	err := server.Redis.Set(client.Username, server.Id, 0).Err()
-	server.ClientTable[client.Username] = client
+	err := server.Redis.Set(client.Credentials.Username, server.Id, 0).Err()
+	server.ClientTable[client.Credentials.Username] = client
 
 	if err != nil {
 		panic(err)
@@ -77,11 +75,11 @@ func (server *EdgeServer) RegisterClient(client *Client) {
 func (server *EdgeServer) UnregisterClient(client *Client) {
 	server.Mutex.Lock()
 	defer server.Mutex.Unlock()
-	server.Redis.Del(client.Username)
-	delete(server.ClientTable, client.Username)
+	server.Redis.Del(client.Credentials.Username)
+	delete(server.ClientTable, client.Credentials.Username)
 }
 
 func (server *EdgeServer) IsClientPresent(client *Client) bool {
-	_, err := server.Redis.Get(client.Username).Result()
+	_, err := server.Redis.Get(client.Credentials.Username).Result()
 	return err != nil
 }

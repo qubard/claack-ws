@@ -6,8 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/qubard/claack-go/websocket/messages/handlers"
-	"github.com/qubard/claack-go/websocket/messages/types"
 )
 
 var allowedHosts = map[string]bool{
@@ -55,9 +53,7 @@ func main() {
 
 	claack.SetUpgrader(&upgrader)
 
-	claack.Hub.Bus.RegisterHandler(types.QueueRace, handlers.QueueRace)
-	claack.Hub.Bus.RegisterHandler(types.AuthUser, handlers.AuthUser)
-	claack.Hub.Bus.RegisterHandler(types.AddMessage, handlers.AddMessage)
+	claack.RegisterHandlers()
 
 	claack.StartHub()
 	claack.HostEndpoint("/ws", ip, port, bufferSize)
