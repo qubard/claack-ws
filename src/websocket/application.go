@@ -3,12 +3,10 @@ package main
 import (
 	"log"
 	"net/http"
-	"sync"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
 	"github.com/qubard/claack-go/lib/postgres"
-	"github.com/qubard/claack-go/lib/util"
 	"github.com/qubard/claack-go/websocket/messages/handlers"
 	"github.com/qubard/claack-go/websocket/messages/types"
 	"github.com/qubard/claack-go/websocket/socket"
@@ -34,7 +32,7 @@ func (app *Application) InitRedis(addr string, password string) error {
 func (app *Application) RegisterHandlers() {
 	app.Hub.Bus.RegisterHandler(types.QueueRace, socket.AuthMiddleware(handlers.QueueRace))
 	app.Hub.Bus.RegisterHandler(types.AuthUser, handlers.AuthUser)
-	app.Hub.Bus.RegisterHandler(types.AddMessage, handlers.AddMessage)
+	app.Hub.Bus.RegisterHandler(types.AddMessage, socket.AuthMiddleware(handlers.AddMessage))
 }
 
 func (app *Application) InitDB(connStr string, schemaFile string) error {
@@ -86,29 +84,11 @@ func (app *Application) HostEndpoint(endpoint string, ip string, port string, bu
 	}
 }
 
-func (app *Application) createEdgeServer(name string) *socket.EdgeServer {
-	globalChan := util.CreateSubChannel(app.redis, "global")
-	relayChan := util.CreateSubChannel(app.redis, name)
-
-	if globalChan == nil || relayChan == nil {
-		panic("Failed to create hub: invalid redis global channel or hub channel")
-	}
-
-	return &socket.EdgeServer{
-		Redis:       app.redis,
-		Id:          name,
-		GlobalChan:  globalChan,
-		RelayChan:   relayChan,
-		ClientTable: make(map[string]*socket.Client),
-		Mutex:       sync.Mutex{},
-	}
-}
-
 func (app *Application) CreateHub(edgeName string) {
 	// The hub needs some way of accessing the database
 	// So we just pass it in like this (dependency injection) so its handlers
 	// can use the database if they need to.
-	app.Hub = socket.CreateHub(app.db, app.createEdgeServer(edgeName))
+	app.Hub = socket.CreateHub(app.db, socket.CreateEdgeServer(app.redis, edgeName))
 }
 
 func CreateApp() *Application {

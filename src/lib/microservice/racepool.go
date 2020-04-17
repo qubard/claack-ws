@@ -4,6 +4,7 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/qubard/claack-go/lib/ds"
 	"github.com/qubard/claack-go/lib/util"
+	"github.com/qubard/claack-go/websocket/socket"
 	"log"
 	"time"
 )
@@ -69,18 +70,26 @@ type RacePool struct {
 	EnqueueChan <-chan *redis.Message
 	// Inbound remove from pool messages
 	DequeueChan <-chan *redis.Message
+	EdgeServer  *socket.EdgeServer
 }
 
 func (pool *RacePool) PoolRacers(ticker *time.Ticker, quit chan struct{}) {
 	for {
 		select {
 		case <-ticker.C:
+			log.Println("pool size:", pool.Pool.Len())
+			for pool.Pool.Len() >= 2 {
+				// Enqueue pairs repeatedly
+				p1 := pool.Pool.Pop()
+				p2 := pool.Pool.Pop()
+
+				log.Println("Queued up", p1, p2)
+			}
 			// Run the pooling algorithm described above
 			// This involves generating a race for users once they are pooled
 			// And removing them from the `Unpooled` list
 			// For now we will pool 2 racers together..
 			// Ideally we have separate pools for each game type (100v100, 1v1, 1v2, 1v3)
-			log.Println("Tick")
 		case <-quit:
 			ticker.Stop()
 			return
@@ -107,12 +116,13 @@ func (pool *RacePool) Run() {
 	}
 }
 
-func CreateRacePool(client *redis.Client, id string, enqChanId string, deqChanId string) *RacePool {
+func CreateRacePool(client *redis.Client, edgeServer *socket.EdgeServer, id string, enqChanId string, deqChanId string) *RacePool {
 	return &RacePool{
 		Id:          id,
 		Redis:       client,
 		EnqueueChan: util.CreateSubChannel(client, enqChanId),
 		DequeueChan: util.CreateSubChannel(client, deqChanId),
 		Pool:        ds.CreateLinkedList(),
+		EdgeServer:  edgeServer,
 	}
 }

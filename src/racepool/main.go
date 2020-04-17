@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/go-redis/redis/v7"
 	"github.com/qubard/claack-go/lib/microservice"
+	"github.com/qubard/claack-go/websocket/socket"
 )
 
 func main() {
@@ -19,8 +20,10 @@ func main() {
 
 	_, err := redis.Ping().Result()
 
+	edgeServer := socket.CreateSimpleEdgeServer(redis)
+
 	if err == nil {
-		pool := microservice.CreateRacePool(redis, "racepool", "enq", "deq")
+		pool := microservice.CreateRacePool(redis, edgeServer, "racepool", "enq", "deq")
 		pool.Run()
 	} else {
 		panic(err)

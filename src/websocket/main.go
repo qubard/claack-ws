@@ -45,7 +45,8 @@ func main() {
 	}
 
 	if err := claack.InitRedis(addr, ""); err != nil {
-		panic("Could not initialize redis connection!")
+		log.Println("Failed to connect to Redis")
+		panic(err)
 	}
 
 	claack.CreateHub("hub1")

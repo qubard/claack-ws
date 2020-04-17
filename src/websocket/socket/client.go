@@ -61,8 +61,8 @@ type Client struct {
 	conn *websocket.Conn
 	// Buffered channel of outbound messages.
 	Send        chan []byte
-	Credentials *AuthCredentials
 	Limiter     *RateLimiter
+	Credentials *AuthCredentials
 }
 
 func (client *Client) SendMessage(msg interface{}) error {
